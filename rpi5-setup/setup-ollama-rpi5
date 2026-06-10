@@ -1,0 +1,17 @@
+#!/bin/bash
+
+MODEL="qwen2.5:1.5b"
+
+echo "running the official ARM64 install script for ollama"
+curl -fsSL https://ollama.com/install.sh | sh
+
+echo "creating a systemd override to limit RAM usage and enable efficiency features"
+sudo mkdir -p /etc/systemd/system/ollama.service.d
+sudo cat ollama-systemd-service.conf >> /etc/systemd/system/ollama.service.d/override.conf
+
+echo "restarting ollama daemon to pick up new config"
+sudo systemctl daemon-reload
+sudo systemctl restart ollama
+
+echo "downloading model $MODEL"
+ollama pull $MODEL

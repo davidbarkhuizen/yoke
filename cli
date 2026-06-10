@@ -1,0 +1,67 @@
+#! /env/bin/bash
+
+option="$1"
+shift 1
+
+clean () {
+
+    sudo find . -exec touch {} +
+}
+
+install () {
+
+    python -m venv .venv
+
+    source .venv/bin/activate
+
+    python -m pip install --upgrade pip
+    python -m pip install -r requirements.txt
+
+    deactivate
+}
+
+enter () {
+
+    source .venv/bin/activate
+    python src/entrypoint.py "$@"
+    deactivate
+}
+
+usage () {
+    echo "-----------------------------------------------"
+    echo "yolo"
+    echo "-----------------------------------------------"
+    echo "usage:"
+    echo
+    echo ". cli [ clean | install | arp-scan | run ]"
+    echo
+    echo
+    echo ". cli arp-scan [interface]"
+}
+
+arp_scan () {
+    sudo arp-scan --interface="$1" --localnet
+}
+
+case "$option" in
+
+    clean)
+        clean "$@"
+    ;;
+
+    install)
+        install
+    ;;
+
+    arp-scan)
+        arp_scan "$@"
+    ;;
+
+    run)
+        enter "$@"
+    ;;
+
+    *)
+        usage
+    ;;
+esac
