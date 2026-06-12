@@ -45,13 +45,15 @@ async def weave(host: str, port: int, model: str):
 
         message = {"content": invocation, "role": "user"}
 
-        print(_model)
         stream = await client.chat(model=_model, messages=[message], stream=True)
 
         reply: str = ""
 
         async for part in stream:
             content: str | list[str] = part["message"]["content"]
+
+            with open("log.log", "a") as file:
+                file.write(str(part) + "\n")
 
             text: str = str(content)
             reply += text
