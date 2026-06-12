@@ -20,6 +20,7 @@ SYSTEM_COMMANDS = [ListModelsCommand, SwitchModelCommand, ActiveModelCommand, Sw
 
 
 async def weave(config: LoomConfig):
+    print(config)
 
     host: str = config.ollama.host
     port: int = config.ollama.port
@@ -58,25 +59,49 @@ async def weave(config: LoomConfig):
         }
 
     async def invoke(invocation: str) -> str:
-        # nonlocal _model
+        nonlocal _model
 
         message = new_user_message(invocation)
 
         stream = await client.chat(model=_model, messages=[message], stream=True)
 
-        reply: str = ""
+        response_text: str = ""
+        thinking_text: str = ""
+
+        was_thinking: bool = False
+        was_content: bool = False
 
         async for part in stream:
-            content: str | list[str] = part["message"]["content"]
-
             with open("log.log", "a") as file:
                 file.write(str(part) + "\n")
 
-            text: str = str(content)
-            reply += text
-            print(text, end="", flush=True)
+            thinking: str | None = part["message"].thinking
+            if thinking:
+                thinking_text += thinking
+                if not was_thinking:
+                    print()
+                print(thinking, end="", flush=True)
 
-        return reply
+            content: str = part["message"]["content"]
+            if content:
+                response_text += content
+                if not was_content:
+                    print(content, end="", flush=True)
+
+            # try:
+            #     done: bool = part["done"]
+            #     done_reason: str | None = part.done_reason
+            # except:
+            #     print(part)
+            #     import traceback
+
+            #     tracek
+            #     raise
+
+            was_thinking: bool = thinking is not None
+            was_content: bool = content != ""
+
+        return response_text
 
     async def execute_system_command(command: str, args: list[str]) -> list[str]:
         matching_command = [cmd for cmd in registered_system_commands if cmd.command == command]
