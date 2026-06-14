@@ -1,49 +1,39 @@
-```markdown
-# dicts_to_table.py
-
-def dicts_to_table(list_of_dicts):
+### solution.py
+```python
+def dicts_to_table(list_of_dicts: list[dict[str, str]]) -> str:
     if not list_of_dicts:
         return ""
-
-    headers = list_of_dicts[0].keys()
-    rows = [headers]
-
-    for dictionary in list_of_dicts:
-        rows.append(dictionary.values())
-
-    table = []
-    for row in rows:
-        table.append("| " + " | ".join(map(str, row)) + " |")
-
-    header_separator = "| " + " | ".join(["---"] * len(headers)) + " |"
-    table.insert(1, header_separator)
-
-    return "\n".join(table)
+    
+    keys = list(list_of_dicts[0].keys())
+    header = "| " + " | ".join(keys) + " |"
+    separator = "| " + " | ".join(["---"] * len(keys)) + " |"
+    
+    rows = []
+    for d in list_of_dicts:
+        row = "| " + " | ".join(str(d[k]) for k in keys) + " |"
+        rows.append(row)
+        
+    return "\n".join([header, separator] + rows)
 ```
 
-```markdown
-# test_dicts_to_table.py
-
+### test_solution.py
+```python
 import unittest
+from solution import dicts_to_table
 
 class TestDictsToTable(unittest.TestCase):
-    def test_basic_functionality(self):
-        list_of_dicts = [
-            {"Name": "Alice", "Age": 30, "City": "New York"},
-            {"Name": "Bob", "Age": 25, "City": "Los Angeles"}
-        ]
-        expected_output = (
-            "| Name  | Age | City        |\n"
-            "| ---   | --- | ----------- |\n"
-            "| Alice | 30  | New York    |\n"
-            "| Bob   | 25  | Los Angeles |"
-        )
-        self.assertEqual(dicts_to_table(list_of_dicts), expected_output)
+    def test_basic_table(self):
+        input_data = [{"name": "Alice", "age": "30"}, {"name": "Bob", "age": "25"}]
+        expected = "| name | age |\n| --- | --- |\n| Alice | 30 |\n| Bob | 25 |"
+        self.assertEqual(dicts_to_table(input_data), expected)
 
     def test_empty_list(self):
-        list_of_dicts = []
-        expected_output = ""
-        self.assertEqual(dicts_to_table(list_of_dicts), expected_output)
+        self.assertEqual(dicts_to_table([]), "")
+
+    def test_single_dict(self):
+        input_data = [{"col1": "val1"}]
+        expected = "| col1 |\n| --- |\n| val1 |"
+        self.assertEqual(dicts_to_table(input_data), expected)
 
 if __name__ == "__main__":
     unittest.main()

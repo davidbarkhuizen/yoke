@@ -34,30 +34,37 @@ async def communicate(
     thinking_text: str = ""
 
     stream = await client.chat(model=model, messages=messages, stream=True)
-    async for part in stream:
-        with open("log.log", "a") as file:
+
+    with open("log.log", "a") as file:
+        async for part in stream:
             file.write(str(part) + "\n")
 
-        thinking: str | None = part["message"].thinking
-        if thinking:
-            if not thinking_text:
-                print("Thinking")
-                print("=-" * 40)
+            message = part.get("message", None)
+            if message is None:
+                continue
 
-            thinking_text += thinking
-            print(thinking, end="", flush=True)
+            thinking: str | None = message.thinking
+            if thinking:
+                if not thinking_text:
+                    print("\nThinking")
+                    print("=-" * 40)
 
-        content: str = part["message"]["content"]
-        if content:
-            if not response_text:
-                print("Content")
-                print("=-" * 40)
+                thinking_text += thinking
+                print(thinking, end="", flush=True)
 
-            response_text += content
-            print(content, end="", flush=True)
+            content: str = message.get("content", None)
+            if content:
+                if not response_text:
+                    print("\nContent")
+                    print("=-" * 40)
 
-        #     done: bool = part["done"]
-        #     done_reason: str | None = part.done_reason
+                response_text += content
+                print(content, end="", flush=True)
+
+            done: bool = bool(part.get("done", "False"))
+            if done:
+                pass
+            # done_reason: str | None = part.done_reason
 
     print()
 

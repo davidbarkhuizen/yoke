@@ -67,6 +67,6 @@ class TaskCommand(AbstractHarnessCommand):
         await write_text_file_async(task_outputs_folder / "output.md", response.content)
 
         if response.thinking:
-            await write_text_file_async(task_outputs_folder / "thinking.txt", response.thinking)
+            await write_text_file_async(task_outputs_folder / "thinking.md", response.thinking)
 
         # TODO stats

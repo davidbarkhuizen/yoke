@@ -16,7 +16,7 @@
 - design a test or tests to confirm that the solution meets the requirements
 - return a response that consists of the code and test files
 
-## restrictions
+## constraints
 
 - focus only on the specification supplied by the user
 - do not explain the code, just return the code and test files, without extra explanation
