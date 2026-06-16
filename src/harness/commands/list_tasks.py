@@ -2,7 +2,6 @@ import glob
 from pathlib import Path
 
 from harness.commands.abstract import AbstractHarnessCommand
-from markdown.display import display_text_as_markdown
 
 
 class ListTasksCommand(AbstractHarnessCommand):

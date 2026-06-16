@@ -35,3 +35,5 @@ class ListModelsCommand(AbstractHarnessCommand):
         display_text_as_markdown(
             self.console, dict_list_to_markdown_table(model_dicts, "right", column_order=["model"])
         )
+
+        return True

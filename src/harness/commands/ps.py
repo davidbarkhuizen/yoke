@@ -10,7 +10,7 @@ class PSCommand(AbstractHarnessCommand):
     def command(self) -> str:
         return "ps"
 
-    async def execute(self, model: str, think: bool, args: list[str]) -> None:
+    async def execute(self, model: str, think: bool, args: list[str]) -> bool:
 
         response: ProcessResponse = await self.client._request(ProcessResponse, "GET", "/api/ps")
 
@@ -36,3 +36,5 @@ class PSCommand(AbstractHarnessCommand):
 
         model_dicts = sorted(model_dicts, key=lambda d: d["model"])
         display_text_as_markdown(self.console, dict_list_to_markdown_table(model_dicts))
+
+        return True

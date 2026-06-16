@@ -152,3 +152,6 @@ class TaskCommand(AbstractHarnessCommand):
             print(f"- {text_file.path}")
 
         # TODO stats
+        #
+
+        return True

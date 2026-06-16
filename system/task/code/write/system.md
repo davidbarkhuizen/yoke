@@ -99,23 +99,6 @@ def hello_world():
     print('hello world')
 ```
 
-Here is an example for a python code file `dog.py` with relative file path `cat/fish/dog.py`:
-
-**`cat/fish/dog.py`**
-```python
-def hello_world():
-    print('hello world')
-```
-
-Here is an example for a sql code file `query.sql` with relative file path `cat/fish/query.sql`:
-
-**`cat/fish/query.sql`**
-```sql
-select * 
-from target_database.target_schema.target_table
-where True
-```
-
 ## constraints
 
 - focus only on the specification supplied by the user
