@@ -6,11 +6,9 @@ from rich.console import Console
 
 from config import YokeConfig
 from harness.commands.abstract import AbstractHarnessCommand
-from harness.commands.help import HelpCommand
 from harness.commands.invoke import InvokeCommand
 from harness.commands.list_commands import ListCommandsCommand
 from harness.commands.list_models import ListModelsCommand
-from harness.commands.list_tasks import ListTasksCommand
 from harness.commands.ps import PSCommand
 from harness.commands.switch_model import SwitchModelCommand
 from harness.commands.switch_thinking_mode import SwitchThinkingModeCommand
@@ -26,14 +24,12 @@ HARNESS_COMMANDS: Sequence[type[AbstractHarnessCommand]] = [
     TaskCommand,
     PSCommand,
     ListCommandsCommand,
-    HelpCommand,
-    ListTasksCommand,
 ]
 
 
 async def yoke(client: AsyncClient, config: YokeConfig):
-    console: Console = new_markdown_console()
 
+    console: Console = new_markdown_console()
     _model: str = config.ollama.default_model
     _think: bool = False
     registered_harness_commands: Sequence[AbstractHarnessCommand] = list()
@@ -68,8 +64,6 @@ async def yoke(client: AsyncClient, config: YokeConfig):
         harness_command = next(iter(matching_command))
         await harness_command.execute(_model, _think, args)
 
-    await execute_harness_command("help", [])
-
     while (invocation := input(f"\n{_model} > ").strip().lower()) not in ["exit", "quit"]:
         if len(invocation) == 0:
             continue
@@ -82,6 +76,7 @@ async def yoke(client: AsyncClient, config: YokeConfig):
 
 
 async def enyoke(config: YokeConfig):
+
     client = new_async_ollama_client(config.ollama.host, config.ollama.port)
     try:
         await yoke(client, config)

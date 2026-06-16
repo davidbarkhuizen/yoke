@@ -6,9 +6,7 @@ from model.model import ChatMessageRole, CommunicationResponse
 
 
 def new_async_ollama_client(host: str, port: int) -> AsyncClient:
-    url: str = f"http://{host}:{port}"
-
-    return AsyncClient(host=url)
+    return AsyncClient(host=f"http://{host}:{port}")
 
 
 def new_message(role: str, text: str, think: bool) -> dict[str, Any]:

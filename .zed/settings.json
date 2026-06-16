@@ -43,5 +43,5 @@
       "PYTHONPATH": ".",
     },
   },
-  "file_scan_exclusions": ["__pycache__", ".git"],
+  "file_scan_exclusions": ["__pycache__", ".git", "example/**"],
 }

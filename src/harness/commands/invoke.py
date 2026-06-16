@@ -19,3 +19,5 @@ class InvokeCommand(AbstractHarnessCommand):
         _: CommunicationResponse = await communicate(
             client=self.client, model=model, system="", user=[text], think=think
         )
+
+        return True

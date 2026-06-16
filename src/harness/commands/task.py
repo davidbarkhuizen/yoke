@@ -64,7 +64,7 @@ class TaskCommand(AbstractHarnessCommand):
 
     @property
     def usage(self) -> str:
-        return f"{self.command} [task-name] [task-specification]"
+        return f"{self.command} [task-name] [user-specification]"
 
     async def execute(self, model: str, think: bool, args: list[str]) -> bool:
 
@@ -82,14 +82,23 @@ class TaskCommand(AbstractHarnessCommand):
             return False
 
         if len(args) < 2:
-            display_text_as_markdown(self.console, f"error: **no task specification**. usage is: {self.usage}")
+            display_text_as_markdown(self.console, f"error: **no user specification for task**. usage is: {self.usage}")
             return False
 
-        specification = args[1]
+        user_specification_name = args[1]
 
-        user_inputs_folder: Path = Path(self.config.folders.user) / specification
-        user_input_files_folder: Path = user_inputs_folder / "files"
-        glob_expression = f"{user_input_files_folder.absolute()}/**/*.*"
+        user_specification_inputs_folder: Path = Path(self.config.folders.user) / user_specification_name
+        user_specification_input_files_folder: Path = user_specification_inputs_folder / "files"
+        glob_expression = f"{user_specification_input_files_folder.absolute()}/**/*.*"
+
+        display_text_as_markdown(
+            self.console,
+            dict_list_to_markdown_table(
+                [{"task": task, "model": model, "specification": user_specification_name}],
+                alignment="left",
+                column_order=["model", "task", "specification"],
+            ),
+        )
 
         task_specification_text: str
         try:
@@ -101,10 +110,10 @@ class TaskCommand(AbstractHarnessCommand):
             )
             return False
 
-        user_spec_text_file_path: Path = user_inputs_folder / "specification.md"
-        user_spec_text: str
+        user_spec_text_file_path: Path = user_specification_inputs_folder / "specification.md"
+        user_specification_text: str
         try:
-            user_spec_text = await read_text_file_async(user_spec_text_file_path)
+            user_specification_text = await read_text_file_async(user_spec_text_file_path)
         except FileNotFoundError:
             display_text_as_markdown(
                 self.console,
@@ -114,27 +123,18 @@ class TaskCommand(AbstractHarnessCommand):
 
         user_files_block = await context_file_block_from_file_paths(glob.glob(glob_expression, recursive=True))
 
-        display_text_as_markdown(
-            self.console,
-            dict_list_to_markdown_table(
-                [{"task": task, "model": model, "specification": specification}],
-                alignment="left",
-                column_order=["task", "model", "specification"],
-            ),
-        )
-
         rsp: CommunicationResponse = await communicate(
             client=self.client,
             model=model,
             system=task_specification_text,
-            user=[structured_user_text(user_files_block=user_files_block, user_text=user_spec_text)],
+            user=[structured_user_text(user_files_block=user_files_block, user_text=user_specification_text)],
             think=think,
         )
 
         thinking = rsp.thinking
         output_markdown_doc: str = rsp.content
 
-        task_outputs_folder: Path = Path(self.config.folders.generated) / specification
+        task_outputs_folder: Path = Path(self.config.folders.generated) / user_specification_name
         rsp_embedded_files_output_path: Path = task_outputs_folder / "files"
 
         if thinking:

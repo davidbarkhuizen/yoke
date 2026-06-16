@@ -21,7 +21,5 @@ class SwitchThinkingModeCommand(AbstractHarnessCommand):
             display_text_as_markdown(self.console, "error: **failed to switch thinking mode**")
             return False
 
-        display_text_as_markdown(
-            self.console, f"thinking-mode switched to {new_think}""
-        )
+        display_text_as_markdown(self.console, f"thinking-mode switched to: {new_think}")
         return True
