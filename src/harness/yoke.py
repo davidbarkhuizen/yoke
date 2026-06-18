@@ -17,27 +17,17 @@ from harness.tether import new_async_ollama_client
 from markdown.display import display_text_as_markdown, new_markdown_console
 
 
-async def execute_harness_command(
-    console, model: str, commands: Sequence[AbstractHarnessCommand], command_name: str, args: list[str]
-) -> bool:
-    matching_commands = [cmd for cmd in commands if cmd.command == command_name]
-    if len(matching_commands) == 0:
-        display_text_as_markdown(console, f"error:  **unknown harness command: {command_name}**")
+async def execute_harness_command(console, model: str, command: AbstractHarnessCommand, args: list[str]) -> bool:
 
-        return False
-
-    if len(matching_commands) > 1:
-        raise ValueError(f"invalid harness command configuration, multiple commands found matching {command_name}")
-
-    harness_command = matching_commands[0]
-
+    succeeded: bool = False
     try:
-        return await harness_command.execute(model, args)
+        succeeded = await command.execute(model, args)
     except Exception as e:
         stack_trace: str = "\n".join(traceback.format_exception(e))
         error_message: str = f"error: unhandled exception during harness command execution - {e} - {stack_trace}"
         display_text_as_markdown(console, error_message)
-        return False
+
+    return succeeded
 
 
 async def harness_llm(client: AsyncClient, config: YokeConfig):
@@ -60,7 +50,26 @@ async def harness_llm(client: AsyncClient, config: YokeConfig):
         ]
     )
 
-    await execute_harness_command(console, model, harness_commands, "help", [])
+    def match_harness_command(command_name: str) -> AbstractHarnessCommand | None:
+        matching_commands = [cmd for cmd in harness_commands if cmd.command == command_name]
+        if len(matching_commands) == 0:
+            display_text_as_markdown(console, f"error:  **unknown harness command: {command_name}**")
+            return None
+
+        if len(matching_commands) > 1:
+            display_text_as_markdown(
+                console,
+                f"error:  **invalid harness command configuration, multiple commands found matching {command_name}**",
+            )
+            return None
+
+        return matching_commands[0]
+
+    help_command: AbstractHarnessCommand | None = match_harness_command("help")
+    if help_command is None:
+        raise ValueError("cannot locate help command")
+
+    await execute_harness_command(console, model, help_command, [])
 
     while (invocation := input(f"\n{model} > ").strip().lower()) not in ["exit", "quit"]:
         if len(invocation) == 0:
@@ -77,7 +86,10 @@ async def harness_llm(client: AsyncClient, config: YokeConfig):
             case []:
                 continue
             case [command_name, *command_args]:
-                await execute_harness_command(console, model, harness_commands, command_name, command_args)
+                command: AbstractHarnessCommand | None = match_harness_command(command_name)
+                if command is None:
+                    continue
+                await execute_harness_command(console, model, command, command_args)
 
 
 async def yoke(config: YokeConfig):
