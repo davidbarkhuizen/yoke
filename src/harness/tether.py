@@ -47,25 +47,18 @@ async def communicate(client: AsyncClient, model: str, system: str, user: list[s
 
             thinking: str | None = message.get("thinking", None)
             if thinking:
-                if not thinking_text:
-                    print("\nThinking")
-                    print("=-" * 40)
-
                 thinking_text += thinking
                 print(thinking, end="", flush=True)
 
             content: str = message.get("content", None)
             if content is not None:
-                if not response_text:
-                    print("\nContent")
-                    print("=-" * 40)
-
                 response_text += content
                 print(content, end="", flush=True)
 
-            done: bool = bool(chat_response.get("done", "False"))
+            done: bool = chat_response.get("done", False)
             if done:
                 stats = CommunicationStats(
+                    model=model,
                     done_reason=chat_response["done_reason"],
                     total_duration_s=chat_response["total_duration"] / 1e9,
                     load_duration_ms=chat_response["load_duration"] / 1e6,
@@ -74,6 +67,8 @@ async def communicate(client: AsyncClient, model: str, system: str, user: list[s
                     eval_count=chat_response["eval_count"],
                     eval_duration_s=chat_response["eval_duration"] / 1e9,
                 )
+    except KeyboardInterrupt:
+        return CommunicationResponse(content=response_text, thinking=thinking_text, stats=None)
 
     finally:
         with open("log.log", "a") as file:

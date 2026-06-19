@@ -10,8 +10,9 @@ from harness.commands.help import HelpCommand
 from harness.commands.list_commands import ListCommandsCommand
 from harness.commands.list_models import ListModelsCommand
 from harness.commands.list_tasks import ListTasksCommand
-from harness.commands.nlq import NaturalLanguageQueryCommand
 from harness.commands.ps import PSCommand
+from harness.commands.query import QueryCommand
+from harness.commands.switch_model import SwitchModelCommand
 from harness.commands.task import TaskCommand
 from harness.tether import new_async_ollama_client
 from markdown.display import display_text_as_markdown, new_markdown_console
@@ -31,47 +32,67 @@ async def execute_harness_command(console, model: str, command: AbstractHarnessC
 
 
 async def harness_llm(client: AsyncClient, config: YokeConfig):
-    console: Console = new_markdown_console()
-    model = config.ollama.default_model
+    _console: Console = new_markdown_console()
+    _model = config.ollama.default_model
 
-    harness_commands: Sequence[AbstractHarnessCommand] = list()
-    harness_commands.extend(
-        [
-            T_HarnessCommand(config, client, console, harness_commands)
-            for T_HarnessCommand in [
-                ListModelsCommand,
-                NaturalLanguageQueryCommand,
-                TaskCommand,
-                PSCommand,
-                ListCommandsCommand,
-                HelpCommand,
-                ListTasksCommand,
+    def switch_model(model: str) -> bool:
+        nonlocal _model
+        # TODO validation
+        _model = model
+        return True
+
+    harness_commands: list[AbstractHarnessCommand] = list()
+
+    def register_harness_commands():
+        nonlocal harness_commands
+
+        harness_commands.extend(
+            [
+                T_HarnessCommand(config, client, _console)
+                for T_HarnessCommand in [
+                    ListModelsCommand,
+                    QueryCommand,
+                    TaskCommand,
+                    PSCommand,
+                    HelpCommand,
+                    ListTasksCommand,
+                ]
             ]
-        ]
-    )
+        )
+
+        harness_commands.append(ListCommandsCommand(config, client, _console, harness_commands))
+        harness_commands.append(SwitchModelCommand(config, client, _console, switch_model))
 
     def match_harness_command(command_name: str) -> AbstractHarnessCommand | None:
         matching_commands = [cmd for cmd in harness_commands if cmd.command == command_name]
         if len(matching_commands) == 0:
-            display_text_as_markdown(console, f"error:  **unknown harness command: {command_name}**")
+            display_text_as_markdown(_console, f"error:  **unknown harness command: {command_name}**")
             return None
 
         if len(matching_commands) > 1:
             display_text_as_markdown(
-                console,
+                _console,
                 f"error:  **invalid harness command configuration, multiple commands found matching {command_name}**",
             )
             return None
 
         return matching_commands[0]
 
+    register_harness_commands()
+
     help_command: AbstractHarnessCommand | None = match_harness_command("help")
     if help_command is None:
         raise ValueError("cannot locate help command")
 
-    await execute_harness_command(console, model, help_command, [])
+    await execute_harness_command(_console, _model, help_command, [])
 
-    while (invocation := input(f"\n{model} > ").strip().lower()) not in ["exit", "quit"]:
+    list_commands_command: AbstractHarnessCommand | None = match_harness_command("list-commands")
+    if list_commands_command is None:
+        raise ValueError("cannot locate help command")
+
+    await execute_harness_command(_console, _model, list_commands_command, [])
+
+    while (invocation := input(f"\n{_model} > ").strip().lower()) not in ["exit", "quit"]:
         if len(invocation) == 0:
             continue
 
@@ -79,7 +100,7 @@ async def harness_llm(client: AsyncClient, config: YokeConfig):
         try:
             splut = invocation.split(" ")
         except Exception as e:
-            display_text_as_markdown(console, f"error: exception parsing harness command {invocation}: {e}")
+            display_text_as_markdown(_console, f"error: exception parsing harness command {invocation}: {e}")
             continue
 
         match splut:
@@ -89,7 +110,7 @@ async def harness_llm(client: AsyncClient, config: YokeConfig):
                 command: AbstractHarnessCommand | None = match_harness_command(command_name)
                 if command is None:
                     continue
-                await execute_harness_command(console, model, command, command_args)
+                await execute_harness_command(_console, _model, command, command_args)
 
 
 async def yoke(config: YokeConfig):

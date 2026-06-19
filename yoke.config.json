@@ -2,7 +2,7 @@
   "ollama": {
     "host": "192.168.1.88",
     "port": 11434,
-    "default_model": "qwen3-coderx30b-a3b-16k:latest"
+    "default_model": "qwen3.6:35b-a3b_think-code"
   },
   "folders": {
     "system": "system",

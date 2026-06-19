@@ -13,6 +13,5 @@ class HelpCommand(AbstractHarnessCommand):
         display_text_as_markdown(self.console, "```Yoke LLM Harness. 2026. David Barkhuizen```")
         display_text_as_markdown(self.console, "```----------------------------------------```")
 
-        await self.get_command("list-commands").execute(model, [])
-
+        display_text_as_markdown(self.console, "list-commands to get a list of commands")
         return True

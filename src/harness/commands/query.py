@@ -3,7 +3,7 @@ from harness.tether import communicate
 from model.model import CommunicationResponse
 
 
-class NaturalLanguageQueryCommand(AbstractHarnessCommand):
+class QueryCommand(AbstractHarnessCommand):
     @property
     def command(self) -> str:
         return "?"

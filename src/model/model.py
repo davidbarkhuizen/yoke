@@ -10,6 +10,7 @@ class ChatMessageRole(Enum):
 
 @dataclass
 class CommunicationStats:
+    model: str
     done_reason: str | None
     total_duration_s: float
     load_duration_ms: float
