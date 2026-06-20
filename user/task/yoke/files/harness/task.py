@@ -8,36 +8,24 @@ from pathlib import Path
 from common.file_utils import file_is_binary, read_text_file_async, write_text_file_async
 from markdown.display import display_text_as_markdown
 from markdown.parse import extract_embedded_text_files_from_markdown
-from markdown.render import dict_list_to_markdown_table, markdown_file_block_for_text_file
+from markdown.render import markdown_file_block_for_text_file
 from model.model import BinaryFile, RawPromptRequest, RawPromptResponse, TextFile
 
 
-def context_file_block_for_text_files(console, text_files: list[TextFile]) -> str:
+def context_file_block_for_text_files(text_files: list[TextFile]) -> str:
 
-    encoded_file_blocks = []
+    context = []
     for text_file in text_files:
         encoded_file = markdown_file_block_for_text_file(TextFile(text_file.path, text_file.text))
-        encoded_file_blocks.extend(encoded_file.split("\n"))
-
+        context.extend(encoded_file.split("\n"))
         print(f"file {text_file.path} embedded into context file block")
 
-    context_file_block: str = "\n".join(encoded_file_blocks)
-
-    display_text_as_markdown(console, f"{len(text_files)} text files embedded into context file block:")
-    for text_file in text_files:
-        display_text_as_markdown(
-            console,
-            dict_list_to_markdown_table(
-                [{"path": text_file.path, "size (chars)": str(len(text_file.text))} for text_file in text_files]
-            ),
-        )
-
-    return context_file_block
+    return "\n".join(context)
 
 
-def structured_user_prompt(console, text: str, text_files: list[TextFile]) -> str:
+def structured_user_prompt(text: str, text_files: list[TextFile]) -> str:
 
-    context_file_block = context_file_block_for_text_files(console, text_files)
+    context_file_block = context_file_block_for_text_files(text_files)
 
     return f"""
 # user prompt
@@ -75,16 +63,16 @@ async def load_system_prompt_for_task_from_disk(console, tasks_root_folder_path:
     return task_system_prompt_text
 
 
-async def load_user_prompt_for_task_from_disk(console, user_prompt_root_folder_path: Path) -> str | None:
+async def load_user_prompt_for_task_from_disc(console, user_prompt_root_folder_path: Path) -> str:
 
     user_prompt_text_file_path: Path = user_prompt_root_folder_path / "specification.md"
     user_prompt_text: str
     try:
         user_prompt_text = await read_text_file_async(user_prompt_text_file_path)
     except FileNotFoundError:
-        error: str = f"error: **user prompt text does not exist @  {user_prompt_root_folder_path}**"
+        error: str = f"error: **user prompt test does not exist @  {user_prompt_root_folder_path}**"
         display_text_as_markdown(console, error)
-        return None
+        raise ValueError(error)
 
     async def context_file_for_file_path(file_path: str) -> TextFile | BinaryFile:
         if await file_is_binary(file_path):
@@ -103,21 +91,19 @@ async def load_user_prompt_for_task_from_disk(console, user_prompt_root_folder_p
         context_file for context_file in user_prompt_context_files if isinstance(context_file, TextFile)
     ]
 
-    return structured_user_prompt(console, text=user_prompt_text, text_files=user_prompt_text_files)
+    return structured_user_prompt(text=user_prompt_text, text_files=user_prompt_text_files)
 
 
 async def load_prompt_request_for_task_from_disk(
     console, tasks_root_folder_path: Path, user_prompt_root_folder_path: Path, task: str
-) -> RawPromptRequest | None:
+) -> RawPromptRequest:
     system_prompt: str = await load_system_prompt_for_task_from_disk(console, tasks_root_folder_path, task)
-    user_prompt: str | None = await load_user_prompt_for_task_from_disk(console, user_prompt_root_folder_path)
-    if user_prompt is None:
-        return None
+    user_prompt: str = await load_user_prompt_for_task_from_disc(console, user_prompt_root_folder_path)
 
     return RawPromptRequest(system_prompt=system_prompt, user_prompt=[user_prompt])
 
 
-async def write_prompt_response_elements_to_disk(console, rsp: RawPromptResponse, folder_path: Path) -> bool:
+async def write_prompt_response_elements_to_disk(rsp: RawPromptResponse, folder_path: Path) -> bool:
 
     try:
         if rsp.thinking:
@@ -130,9 +116,9 @@ async def write_prompt_response_elements_to_disk(console, rsp: RawPromptResponse
 
         embedded_text_files: list[TextFile] = extract_embedded_text_files_from_markdown(rsp.content)
 
-        display_text_as_markdown(console, f"{len(embedded_text_files)} embedded text files extracted from response")
+        print(f"response contains {len(embedded_text_files)} embedded text files:")
         for text_file in embedded_text_files:
-            display_text_as_markdown(console, f"- {text_file.path}")
+            print(f"- {text_file.path}")
 
         files_folder_path: Path = folder_path / "files"
         os.makedirs(files_folder_path, exist_ok=True)

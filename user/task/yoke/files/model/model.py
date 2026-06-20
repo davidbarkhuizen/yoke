@@ -52,11 +52,11 @@ class PromptStats:
 
     @property
     def tokens_in_per_second(self):
-        return (self.prompt_eval_count / self.prompt_eval_duration_s) if self.prompt_eval_duration_s != 0 else 9
+        return self.prompt_eval_count / self.prompt_eval_duration_s
 
     @property
     def tokens_out_per_second(self):
-        return (self.eval_count / self.eval_duration_s) if self.eval_duration_s != 0 else 0
+        return self.eval_count / self.eval_duration_s
 
 
 @dataclass

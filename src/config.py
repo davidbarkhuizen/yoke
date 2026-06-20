@@ -17,7 +17,7 @@ class LogConfig:
 @dataclass
 class FoldersConfig:
     system: str = field(default_factory=lambda: "system")
-    user: str = field(default_factory=lambda: "example/specifications")
+    user: str = field(default_factory=lambda: "user")
 
 
 @dataclass

@@ -6,7 +6,7 @@
   },
   "folders": {
     "system": "system",
-    "user": "example/specifications"
+    "user": "user"
   },
   "log": { "root_folder": "log" }
 }

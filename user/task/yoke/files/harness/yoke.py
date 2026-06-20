@@ -40,7 +40,7 @@ async def runloop(
 
         splut: list[str] = list()
         try:
-            splut = [token for token in invocation.split(" ") if token not in [" ", ""]]
+            splut = [token for token in invocation.split(" ") if token not in [" "]]
         except Exception as e:
             display_text_as_markdown(console, f"error: exception parsing harness command {invocation}: {e}")
             continue

@@ -40,18 +40,16 @@ class TaskCommand(AbstractHarnessCommand):
             ),
         )
 
-        user_prompt_root_folder_path: Path = Path(self.config.folders.user) / "task" / user_specification_name
+        user_prompt_root_folder_path: Path = Path(self.config.folders.user) / user_specification_name
         tasks_system_prompt_root_folder_path: Path = Path(self.config.folders.system)
 
-        rq: RawPromptRequest | None = await load_prompt_request_for_task_from_disk(
+        rq: RawPromptRequest = await load_prompt_request_for_task_from_disk(
             self.console, tasks_system_prompt_root_folder_path, user_prompt_root_folder_path, task
         )
-        if rq is None:
-            return False
 
         rsp: RawPromptResponse = await prompt(self.client, model, rq)
 
         task_outputs_folder: Path = user_prompt_root_folder_path / "generated" / str(uuid.uuid4())
 
-        _ = await write_prompt_response_elements_to_disk(self.console, rsp, task_outputs_folder)
+        _ = await write_prompt_response_elements_to_disk(rsp, task_outputs_folder)
         return True

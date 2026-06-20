@@ -4,5 +4,5 @@
       "root": "src",
     },
   ],
-  "ignore": ["**/__pycache__", "tasks/**"],
+  "ignore": ["**/__pycache__", "user/specifications/**/files"],
 }
