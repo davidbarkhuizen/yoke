@@ -172,9 +172,9 @@ async def prompt_and_handle_tool_calls(
         tool_call_response_messages: list[dict[str, Any]] = []
 
         for tool_call in tool_calls:
-            tool_call_response: str = await call_tool(console, tools, tool_call)
+            tool_call_response: str | None = await call_tool(console, tools, tool_call)
             tool_call_response_messages.append(
-                new_message(role="tool", tool_name=tool_call.function.name, text=tool_call_response)
+                new_message(role="tool", tool_name=tool_call.function.name, text=str(tool_call_response))
             )
 
         message_history.extend(tool_call_response_messages)
