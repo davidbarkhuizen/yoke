@@ -97,13 +97,12 @@ async def prompt(console, client: AsyncClient, model: str, rq: RawPromptRequest)
             if content is not None and content != "":
                 if len(rsp_content_text) == 0:
                     print()
+                    print("-" * 80)
                 rsp_content_text += content
                 print(content, end="", flush=True)
 
             tool_calls = message.get("tool_calls", None)
             if tool_calls is not None and len(tool_calls) > 0:
-                print()
-                print(tool_calls)
                 rsp_tool_calls.extend(tool_calls)
 
             def safe_get(d: ChatResponse, key: str) -> float:
@@ -142,6 +141,10 @@ async def prompt(console, client: AsyncClient, model: str, rq: RawPromptRequest)
     finally:
         with open("log.log", "a") as file:
             file.write("\n".join([str(rsp) for rsp in chat_responses]))
+
+    if rsp_content_text != 0:
+        print()
+        print("-" * 80)
 
     if rsp_stats:
         print(

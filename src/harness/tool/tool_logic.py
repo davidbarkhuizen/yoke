@@ -12,9 +12,9 @@ async def call_tool(console, tools: list[Tool], tool_call: Message.ToolCall) -> 
     target_tool_name: str = tool_call.function.name
     tool_call_arguments: Mapping[str, Any] = tool_call.function.arguments
 
-    display_text_as_markdown(console, f"tool: **{target_tool_name}**")
+    display_text_as_markdown(console, "-=" * 20)
+    display_text_as_markdown(console, f"**{target_tool_name}**")
     if len(tool_call_arguments.keys()) > 0:
-        display_text_as_markdown(console, "**Arguments**")
         display_text_as_markdown(console, dict_list_to_markdown_table([tool_call_arguments]))
 
     matching_tool_fns = [tool.function for tool in tools if tool.name == target_tool_name]
@@ -27,6 +27,8 @@ async def call_tool(console, tools: list[Tool], tool_call: Message.ToolCall) -> 
     tool_fn: Callable = matching_tool_fns[0]
     tool_call_result: str = await tool_fn(**tool_call_arguments)
 
-    display_text_as_markdown(console, f"result: {tool_call_result}")
+    display_text_as_markdown(console, f"-> **{tool_call_result}**")
+
+    display_text_as_markdown(console, "-=" * 20)
 
     return tool_call_result

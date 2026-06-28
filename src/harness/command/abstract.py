@@ -25,6 +25,10 @@ class AbstractHarnessCommand(ABC):
         raise NotImplementedError()
 
     @property
+    def name(self) -> str:
+        return self.command
+
+    @property
     def usage(self) -> str:
         return self.command
 

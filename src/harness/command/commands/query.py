@@ -10,6 +10,10 @@ class QueryCommand(AbstractHarnessCommand):
         return "?"
 
     @property
+    def name(self) -> str:
+        return "natural language query"
+
+    @property
     def usage(self) -> str:
         return "? [natural language query]"
 

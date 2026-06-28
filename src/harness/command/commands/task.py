@@ -2,7 +2,7 @@ import uuid
 from pathlib import Path
 
 from harness.command.abstract import AbstractHarnessCommand
-from harness.task_logic import load_prompt_request_for_task_from_disk, write_prompt_response_elements_to_disk
+from harness.task.task_logic import load_prompt_request_for_task_from_disk, write_prompt_response_elements_to_disk
 from harness.tether import prompt
 from markdown.display import display_text_as_markdown
 from markdown.render import dict_list_to_markdown_table
@@ -13,6 +13,10 @@ class TaskCommand(AbstractHarnessCommand):
     @property
     def command(self) -> str:
         return "!"
+
+    @property
+    def name(self) -> str:
+        return "task"
 
     @property
     def usage(self) -> str:

@@ -2,14 +2,13 @@ from typing import Callable
 
 from ollama import AsyncClient
 from rich.console import Console
-from typing_extensions import Sequence
 
 from config import YokeConfig
 from harness.command.abstract import AbstractHarnessCommand
 from markdown.display import display_text_as_markdown
 
 
-class SwitchModelCommand(AbstractHarnessCommand):
+class UseModelCommand(AbstractHarnessCommand):
     def __init__(
         self,
         config: YokeConfig,
@@ -22,11 +21,11 @@ class SwitchModelCommand(AbstractHarnessCommand):
 
     @property
     def command(self) -> str:
-        return "switch-model"
+        return "use-model"
 
     @property
     def usage(self) -> str:
-        return "switch-model [model]"
+        return "use-model [model]"
 
     async def execute(self, model: str, args: list[str]) -> bool:
 

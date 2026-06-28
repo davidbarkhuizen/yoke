@@ -1,4 +1,3 @@
-import asyncio
 import traceback
 
 from ollama import AsyncClient
@@ -7,37 +6,17 @@ from typing_extensions import Callable
 
 from config import YokeConfig
 from harness.command.abstract import AbstractHarnessCommand
+from harness.command.command_logic import execute_harness_command
 from harness.command.commands.help import HelpCommand
-from harness.command.commands.list_commands import ListCommandsCommand
 from harness.command.commands.list_models import ListModelsCommand
 from harness.command.commands.list_tasks import ListTasksCommand
 from harness.command.commands.list_tools import ListToolsCommand
 from harness.command.commands.ps import PSCommand
 from harness.command.commands.query import QueryCommand
-from harness.command.commands.switch_model import SwitchModelCommand
 from harness.command.commands.task import TaskCommand
+from harness.command.commands.use_model import UseModelCommand
 from harness.tether import new_async_ollama_client
 from markdown.display import display_text_as_markdown, new_markdown_console
-
-
-async def execute_harness_command(console, model: str, command: AbstractHarnessCommand, args: list[str]) -> bool:
-
-    succeeded: bool = False
-    try:
-        succeeded = await command.execute(model, args)
-    except ConnectionError:
-        display_text_as_markdown(console, "**error connecting to ollama server**")
-    except KeyboardInterrupt:
-        display_text_as_markdown(console, "**keyboard interrupt**")
-    except asyncio.exceptions.CancelledError:
-        display_text_as_markdown(console, "**async cancelled error**")
-        display_text_as_markdown(console, traceback.format_exc())
-    except Exception as e:
-        stack_trace: str = "\n".join(traceback.format_exception(e))
-        error_message: str = f"error: unhandled exception during harness command execution - {e} - {stack_trace}"
-        display_text_as_markdown(console, error_message)
-
-    return succeeded
 
 
 async def runloop(
@@ -91,15 +70,14 @@ async def harness_llm(client: AsyncClient, config: YokeConfig):
                     QueryCommand,
                     TaskCommand,
                     PSCommand,
-                    HelpCommand,
                     ListTasksCommand,
                     ListToolsCommand,
                 ]
             ]
         )
 
-        harness_commands.append(ListCommandsCommand(config, client, _console, harness_commands))
-        harness_commands.append(SwitchModelCommand(config, client, _console, switch_model))
+        harness_commands.append(HelpCommand(config, client, _console, harness_commands))
+        harness_commands.append(UseModelCommand(config, client, _console, switch_model))
 
     def match_harness_command(command_name: str) -> AbstractHarnessCommand | None:
         matching_commands = [cmd for cmd in harness_commands if cmd.command == command_name]
@@ -121,14 +99,7 @@ async def harness_llm(client: AsyncClient, config: YokeConfig):
     help_command: AbstractHarnessCommand | None = match_harness_command("help")
     if help_command is None:
         raise ValueError("cannot locate help command")
-
     await execute_harness_command(_console, _model, help_command, [])
-
-    list_commands_command: AbstractHarnessCommand | None = match_harness_command("list-commands")
-    if list_commands_command is None:
-        raise ValueError("cannot locate list-commands command")
-
-    await execute_harness_command(_console, _model, list_commands_command, [])
 
     await runloop(_console, get_model, match_harness_command)
 
