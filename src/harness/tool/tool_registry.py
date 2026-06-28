@@ -3,7 +3,7 @@ import importlib
 import os
 from pathlib import Path
 
-from harness.tool.tool_model import Tool, ToolTag
+from model.model import Tool, ToolTag
 
 
 def load_tools() -> list[Tool]:

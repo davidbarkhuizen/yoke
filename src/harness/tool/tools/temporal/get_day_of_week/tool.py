@@ -1,6 +1,6 @@
 import datetime
 
-from harness.tool.tool_model import Tool, ToolTag
+from model.model import Tool, ToolTag
 
 
 async def get_day_of_week(iso8601_datum: str) -> str:
@@ -18,4 +18,4 @@ async def get_day_of_week(iso8601_datum: str) -> str:
 
 
 def new_tool() -> Tool:
-    return Tool("get-day-of-week", get_day_of_week, [ToolTag.TEMPORAL])
+    return Tool("get_day_of_week", get_day_of_week, [ToolTag.TEMPORAL])

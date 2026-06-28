@@ -2,7 +2,7 @@ from urllib.parse import urlencode
 
 import httpx
 
-from harness.tool.tool_model import Tool, ToolTag
+from model.model import Tool, ToolTag
 
 
 async def http_get_json(url) -> dict:
@@ -51,4 +51,4 @@ async def search(query: str) -> str:
 
 
 def new_tool() -> Tool:
-    return Tool("search-internet", search, [ToolTag.SEARCH, ToolTag.INTERNET])
+    return Tool("search", search, [ToolTag.SEARCH, ToolTag.INTERNET])

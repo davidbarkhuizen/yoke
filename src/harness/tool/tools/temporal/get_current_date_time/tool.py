@@ -1,6 +1,6 @@
 import datetime
 
-from harness.tool.tool_model import Tool, ToolTag
+from model.model import Tool, ToolTag
 
 
 async def get_current_date_time() -> str:
@@ -15,4 +15,4 @@ async def get_current_date_time() -> str:
 
 
 def new_tool() -> Tool:
-    return Tool("get-current-date", get_current_date_time, [ToolTag.TEMPORAL])
+    return Tool("get_current_date_time", get_current_date_time, [ToolTag.TEMPORAL])

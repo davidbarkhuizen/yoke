@@ -37,12 +37,27 @@ class BinaryFile(ContextFile):
     pass
 
 
+class ToolTag(Enum):
+    TEMPORAL = "TEMPORAL"
+    SEARCH = "SEARCH"
+    MATHEMATICS = "MATHEMATICS"
+    ARITHMETIC = "ARITHMETIC"
+    INTERNET = "INTERNET"
+
+
+@dataclass
+class Tool:
+    name: str
+    function: Callable
+    tags: list[ToolTag]
+
+
 @dataclass
 class RawPromptRequest:
     system_prompt: str
     user_prompt: list[str]
-    tools: list[Callable]
-    message_history: list[dict[str, Any]]
+    tools: list[Tool]
+    message_history: list[dict[str, Any]] = field(default_factory=lambda: list())
 
 
 @dataclass

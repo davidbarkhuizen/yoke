@@ -1,13 +1,14 @@
 from __future__ import barry_as_FLUFL
 
 import traceback
-from typing import Any
+from typing import Any, Callable
 
 import httpx
 from ollama import AsyncClient, ChatResponse, Message
 
+from harness.tool.tool_logic import call_tool
 from markdown.display import display_text_as_markdown
-from model.model import ChatMessageRole, PromptStats, RawPromptRequest, RawPromptResponse
+from model.model import ChatMessageRole, PromptStats, RawPromptRequest, RawPromptResponse, Tool
 
 
 def new_async_ollama_client(host: str, port: int) -> AsyncClient:
@@ -72,8 +73,9 @@ async def prompt(console, client: AsyncClient, model: str, rq: RawPromptRequest)
             failure_stacktrace=failure_stacktrace if failure_stacktrace is not None else "",
         )
 
+    tools: list[Callable] = [tool.function for tool in rq.tools]
     try:
-        async for chat_response in await client.chat(model=model, messages=rq_messages, tools=rq.tools, stream=True):
+        async for chat_response in await client.chat(model=model, messages=rq_messages, tools=tools, stream=True):
             chat_responses.append(chat_response)
 
             responding_model: str | None = chat_response.model
@@ -150,3 +152,37 @@ async def prompt(console, client: AsyncClient, model: str, rq: RawPromptRequest)
         )
 
     return new_raw_prompt_response()
+
+
+async def prompt_and_handle_tool_calls(
+    console, client: AsyncClient, model: str, rq: RawPromptRequest, tools: list[Tool]
+) -> RawPromptResponse:
+
+    initial_rq = rq
+    initial_rsp: RawPromptResponse = await prompt(console, client, model, initial_rq)
+
+    message_history: list[dict[str, Any]] = list(initial_rsp.message_history)
+
+    tool_calls: list[Message.ToolCall] = list(initial_rsp.tool_calls)
+    rsp: RawPromptResponse = initial_rsp
+    while len(tool_calls) > 0:
+        tool_call_response_messages: list[dict[str, Any]] = []
+
+        for tool_call in tool_calls:
+            tool_call_response: str = await call_tool(console, tools, tool_call)
+            tool_call_response_messages.append(
+                new_message(role="tool", tool_name=tool_call.function.name, text=tool_call_response)
+            )
+
+        message_history.extend(tool_call_response_messages)
+
+        rsp = await prompt(
+            console,
+            client,
+            model,
+            RawPromptRequest(system_prompt="", user_prompt=[], tools=tools, message_history=message_history),
+        )
+        tool_calls = [*rsp.tool_calls]
+        message_history = rsp.message_history
+
+    return rsp

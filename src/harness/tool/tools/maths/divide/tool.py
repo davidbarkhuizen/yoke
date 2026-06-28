@@ -1,4 +1,4 @@
-from harness.tool.tool_model import Tool, ToolTag
+from model.model import Tool, ToolTag
 
 
 async def divide(dividend: float, divisor: float) -> str:
