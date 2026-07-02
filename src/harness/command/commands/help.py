@@ -25,13 +25,14 @@ class HelpCommand(AbstractHarnessCommand):
 
     async def execute(self, model: str, args: list[str]) -> bool:
 
-        model_dicts = [{"command": command.command, "usage": command.usage} for command in self._commands]
-        model_dicts = sorted(model_dicts, key=lambda d: d["command"])
-
         display_text_as_markdown(self.console, "```----------------------------------------```")
         display_text_as_markdown(self.console, "```Yoke LLM Harness. 2026. David Barkhuizen```")
         display_text_as_markdown(self.console, "```----------------------------------------```")
 
-        display_text_as_markdown(self.console, dict_list_to_markdown_table(model_dicts, alignment="left"))
+        command_usages = sorted(
+            [{"command": command.command, "usage": command.usage} for command in self._commands],
+            key=lambda d: d["command"],
+        )
+        display_text_as_markdown(self.console, dict_list_to_markdown_table(command_usages, alignment="left"))
 
         return True

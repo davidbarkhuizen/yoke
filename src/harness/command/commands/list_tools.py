@@ -1,6 +1,5 @@
 from ollama import AsyncClient
 from rich.console import Console
-from typing_extensions import Sequence
 
 from config import YokeConfig
 from harness.command.abstract import AbstractHarnessCommand
@@ -27,6 +26,6 @@ class ListToolsCommand(AbstractHarnessCommand):
         tool_dicts = [{"tool": tool.name} for tool in load_tools()]
         tool_dicts = sorted(tool_dicts, key=lambda d: d["tool"])
 
-        display_text_as_markdown(self.console, dict_list_to_markdown_table(tool_dicts, alignment="left"))
+        display_text_as_markdown(self.console, dict_list_to_markdown_table(tool_dicts, alignment="right"))
 
         return True

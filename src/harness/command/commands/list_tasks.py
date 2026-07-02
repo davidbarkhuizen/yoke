@@ -3,6 +3,7 @@ from pathlib import Path
 
 from harness.command.abstract import AbstractHarnessCommand
 from markdown.display import display_text_as_markdown
+from markdown.render import dict_list_to_markdown_table
 
 
 class ListTasksCommand(AbstractHarnessCommand):
@@ -19,7 +20,9 @@ class ListTasksCommand(AbstractHarnessCommand):
             for spec_file_path in glob.glob(f"{root_task_specs_folder_path}/**/system.md", recursive=True)
         ]
 
-        for task_name in task_names:
-            display_text_as_markdown(self.console, f"- {task_name}")
+        display_text_as_markdown(
+            self.console,
+            dict_list_to_markdown_table([{"task": task} for task in sorted(task_names)], alignment="right"),
+        )
 
         return True
