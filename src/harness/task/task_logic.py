@@ -3,9 +3,14 @@ import glob
 import json
 import os
 import traceback
+from datetime import datetime
 from pathlib import Path
 
+from ollama import AsyncClient
+
 from common.file_utils import file_is_binary, read_text_file_async, write_text_file_async
+from config import YokeConfig
+from harness.tether import prompt
 from markdown.display import display_text_as_markdown
 from markdown.parse import extract_embedded_text_files_from_markdown
 from markdown.render import dict_list_to_markdown_table, markdown_file_block_for_text_file
@@ -13,6 +18,9 @@ from model.model import BinaryFile, RawPromptRequest, RawPromptResponse, TextFil
 
 
 def context_file_block_for_text_files(console, text_files: list[TextFile]) -> str:
+
+    if len(text_files) == 0:
+        return ""
 
     encoded_file_blocks = []
     for text_file in text_files:
@@ -123,22 +131,24 @@ async def write_prompt_response_elements_to_disk(console, rsp: RawPromptResponse
         if rsp.thinking:
             await write_text_file_async(folder_path / "thinking.md", rsp.thinking)
 
-        await write_text_file_async(folder_path / "output.md", rsp.content)
+        if rsp.content:
+            await write_text_file_async(folder_path / "output.md", rsp.content)
 
-        stats_file_str: str = json.dumps(rsp.stats.__dict__, indent=4)
-        await write_text_file_async(folder_path / "stats.json", stats_file_str)
+        if rsp.stats:
+            stats_file_str: str = json.dumps(rsp.stats.__dict__, indent=4)
+            await write_text_file_async(folder_path / "stats.json", stats_file_str)
 
         embedded_text_files: list[TextFile] = extract_embedded_text_files_from_markdown(rsp.content)
+        if len(embedded_text_files) > 0:
+            display_text_as_markdown(console, f"{len(embedded_text_files)} embedded text files extracted from response")
+            for text_file in embedded_text_files:
+                display_text_as_markdown(console, f"- {text_file.path}")
 
-        display_text_as_markdown(console, f"{len(embedded_text_files)} embedded text files extracted from response")
-        for text_file in embedded_text_files:
-            display_text_as_markdown(console, f"- {text_file.path}")
+            files_folder_path: Path = folder_path / "files"
+            os.makedirs(files_folder_path, exist_ok=True)
 
-        files_folder_path: Path = folder_path / "files"
-        os.makedirs(files_folder_path, exist_ok=True)
-
-        for text_file in embedded_text_files:
-            await write_text_file_async(files_folder_path / text_file.path, text_file.text)
+            for text_file in embedded_text_files:
+                await write_text_file_async(files_folder_path / text_file.path, text_file.text)
 
         return True
 
@@ -148,3 +158,34 @@ async def write_prompt_response_elements_to_disk(console, rsp: RawPromptResponse
         print(error_message)
 
         return False
+
+
+async def execute_task(
+    config: YokeConfig, client: AsyncClient, console, model: str, task: str, user_specification_name: str
+) -> RawPromptResponse | None:
+
+    display_text_as_markdown(
+        console,
+        dict_list_to_markdown_table(
+            [{"task": task, "model": model, "user task specification": user_specification_name}],
+            alignment="left",
+            column_order=["model", "task", "user task specification"],
+        ),
+    )
+
+    user_prompt_root_folder_path: Path = Path(config.folders.user) / "task" / user_specification_name
+    tasks_system_prompt_root_folder_path: Path = Path(config.folders.system)
+
+    rq: RawPromptRequest | None = await load_prompt_request_for_task_from_disk(
+        console, tasks_system_prompt_root_folder_path, user_prompt_root_folder_path, task
+    )
+    if rq is None:
+        return None
+
+    rsp: RawPromptResponse = await prompt(console, client, model, rq)
+
+    run_folder: str = datetime.now().strftime("%Y%m%d_%H%M%S")
+    task_outputs_folder: Path = user_prompt_root_folder_path / "generated" / run_folder
+
+    _ = await write_prompt_response_elements_to_disk(console, rsp, task_outputs_folder)
+    return rsp
