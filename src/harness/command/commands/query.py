@@ -19,9 +19,8 @@ class QueryCommand(AbstractHarnessCommand):
 
     async def execute(self, model: str, args: list[str]) -> bool:
 
-        text = " ".join(args)
-
         available_tools: list[Tool] = [tool for tool in load_tools()]
+        text = " ".join(args)
 
         rq = RawPromptRequest(system_prompt="", user_prompt=[text], tools=available_tools)
         rsp = await prompt_and_handle_tool_calls(self.console, self.client, model, rq, available_tools)

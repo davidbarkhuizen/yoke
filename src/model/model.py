@@ -6,10 +6,11 @@ from ollama import Message
 from typing_extensions import Any
 
 
-class ChatMessageRole(Enum):
-    user = "user"
-    system = "system"
-    assistant = "assistant"
+class ChatRole(Enum):
+    USER = "user"
+    SYSTEM = "system"
+    ASSISTENT = "assistant"
+    TOOL = "tool"
 
 
 @dataclass

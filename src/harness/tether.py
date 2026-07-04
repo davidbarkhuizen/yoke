@@ -8,7 +8,7 @@ from ollama import AsyncClient, ChatResponse, Message
 
 from harness.tool.tool_logic import call_tool
 from markdown.display import display_text_as_markdown
-from model.model import ChatMessageRole, PromptStats, RawPromptRequest, RawPromptResponse, Tool
+from model.model import ChatRole, PromptStats, RawPromptRequest, RawPromptResponse, Tool
 
 
 def new_async_ollama_client(host: str, port: int) -> AsyncClient:
@@ -16,9 +16,9 @@ def new_async_ollama_client(host: str, port: int) -> AsyncClient:
 
 
 def new_message(
-    role: str, text: str, tool_calls: list[Message.ToolCall] | None = None, tool_name: str | None = None
+    role: ChatRole, content: str, tool_calls: list[Message.ToolCall] | None = None, tool_name: str | None = None
 ) -> dict[str, Any]:
-    core: dict[str, Any] = {"content": text, "role": role}
+    core: dict[str, Any] = {"content": content, "role": role.value}
 
     if tool_calls is not None and len(tool_calls) > 0:
         core["tool_calls"] = tool_calls
@@ -35,9 +35,12 @@ async def prompt(console, client: AsyncClient, model: str, rq: RawPromptRequest)
     user_prompt_length: int = sum([len(text) for text in rq.user_prompt])
     total_prompt_length: int = system_prompt_length + user_prompt_length
     print(f"context length (chars): {total_prompt_length} = system {system_prompt_length} + user {user_prompt_length}")
+    if len(rq.tools) > 0:
+        tools_str: str = ", ".join([tool.name for tool in rq.tools])
+        print(f"tools: {tools_str}")
 
-    system_message = new_message(ChatMessageRole.system.value, rq.system_prompt, [])
-    user_messages = [new_message(ChatMessageRole.user.value, text, []) for text in rq.user_prompt]
+    system_message = new_message(ChatRole.SYSTEM, rq.system_prompt, [])
+    user_messages = [new_message(ChatRole.USER, text, []) for text in rq.user_prompt]
 
     rq_messages: list[dict[str, Any]] = [*rq.message_history]
     if len(rq.system_prompt) > 0:
@@ -53,7 +56,7 @@ async def prompt(console, client: AsyncClient, model: str, rq: RawPromptRequest)
     chat_responses: list[ChatResponse] = list()
 
     rsp_messages: list[dict[str, Any]] = [
-        new_message(role="assistant", text=rsp_content_text, tool_calls=rsp_tool_calls)
+        new_message(role=ChatRole.ASSISTENT, content=rsp_content_text, tool_calls=rsp_tool_calls)
     ]
 
     def new_raw_prompt_response(
@@ -174,7 +177,7 @@ async def prompt_and_handle_tool_calls(
         for tool_call in tool_calls:
             tool_call_response: str | None = await call_tool(console, tools, tool_call)
             tool_call_response_messages.append(
-                new_message(role="tool", tool_name=tool_call.function.name, text=str(tool_call_response))
+                new_message(role=ChatRole.TOOL, tool_name=tool_call.function.name, content=str(tool_call_response))
             )
 
         message_history.extend(tool_call_response_messages)
