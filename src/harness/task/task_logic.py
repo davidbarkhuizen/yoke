@@ -135,18 +135,6 @@ class FunctionEncoder(json.JSONEncoder):
         return super().default(o)
 
 
-def msg_history_to_json(message_history: list[Any]) -> str:
-
-    # cleaned = []
-    # for msg in message_history:
-    #     msg["tool_calls"] = [dict(msg.__dict__) for msg in msg.get("tool_calls", [])]
-    #     cleaned.append(msg)
-
-    # print(cleaned)
-
-    return json.dumps(message_history, cls=FunctionEncoder, indent=4)
-
-
 async def write_prompt_response_elements_to_disk(console, rsp: RawPromptResponse, folder_path: Path) -> bool:
 
     try:
@@ -157,7 +145,7 @@ async def write_prompt_response_elements_to_disk(console, rsp: RawPromptResponse
             await write_text_file_async(folder_path / "output.md", rsp.content)
 
         if rsp.message_history:
-            message_history_json_str: str = msg_history_to_json(rsp.message_history)
+            message_history_json_str: str = json.dumps(rsp.message_history, cls=FunctionEncoder, indent=4)
             await write_text_file_async(folder_path / "message_history.json", message_history_json_str)
 
         if rsp.stats:
