@@ -42,10 +42,8 @@ async def search_internet(query: str) -> str:
         A string containing the search result
     """
 
-    print(query)
-
+    raise NotImplementedError(query)
     response: dict = await search_duckduckgo(query)
-    print(response)
 
     return str(response)
 
