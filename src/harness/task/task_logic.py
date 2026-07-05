@@ -10,11 +10,11 @@ from ollama import AsyncClient
 
 from common.file_utils import file_is_binary, read_text_file_async, write_text_file_async
 from config import YokeConfig
-from harness.tether import prompt
+from harness.tether import prompt, prompt_and_handle_tool_calls
 from markdown.display import display_text_as_markdown
 from markdown.parse import extract_embedded_text_files_from_markdown
 from markdown.render import dict_list_to_markdown_table, markdown_file_block_for_text_file
-from model.model import BinaryFile, RawPromptRequest, RawPromptResponse, TextFile
+from model.model import BinaryFile, RawPromptRequest, RawPromptResponse, TextFile, Tool
 
 
 def context_file_block_for_text_files(console, text_files: list[TextFile]) -> str:
@@ -134,6 +134,10 @@ async def write_prompt_response_elements_to_disk(console, rsp: RawPromptResponse
         if rsp.content:
             await write_text_file_async(folder_path / "output.md", rsp.content)
 
+        if rsp.message_history:
+            message_history_json_str: str = json.dumps(rsp.message_history, indent=4)
+            await write_text_file_async(folder_path / "message_history.json", message_history_json_str)
+
         if rsp.stats:
             stats_file_str: str = json.dumps(rsp.stats.__dict__, indent=4)
             await write_text_file_async(folder_path / "stats.json", stats_file_str)
@@ -182,7 +186,8 @@ async def execute_task(
     if rq is None:
         return None
 
-    rsp: RawPromptResponse = await prompt(console, client, model, rq)
+    tools: list[Tool] = []
+    rsp: RawPromptResponse = await prompt_and_handle_tool_calls(console, client, model, rq, tools)
 
     run_folder: str = datetime.now().strftime("%Y%m%d_%H%M%S")
     task_outputs_folder: Path = user_prompt_root_folder_path / "generated" / run_folder

@@ -23,3 +23,7 @@ async def write_text_file_async(file_path: Path, text: str):
     os.makedirs(file_path.parent, exist_ok=True)
     async with aiofiles.open(file_path, mode="tw") as file:
         await file.write(text)
+
+
+async def write_lines_to_text_file_async(file_path: Path, lines: list[str]):
+    return await write_text_file_async(file_path, "\n".join(lines))
