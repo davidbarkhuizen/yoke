@@ -17,4 +17,4 @@ async def multiply(x: float, y: float) -> str:
 
 
 def new_tool() -> Tool:
-    return Tool("multiply", multiply, [ToolTag.MATHEMATICS, ToolTag.ARITHMETIC])
+    return Tool(multiply, [ToolTag.MATHEMATICS, ToolTag.ARITHMETIC])

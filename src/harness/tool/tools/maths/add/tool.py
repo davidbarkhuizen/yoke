@@ -16,4 +16,4 @@ async def add(x: float, y: float) -> str:
 
 
 def new_tool() -> Tool:
-    return Tool("add", add, [ToolTag.MATHEMATICS, ToolTag.ARITHMETIC])
+    return Tool(add, [ToolTag.MATHEMATICS, ToolTag.ARITHMETIC])

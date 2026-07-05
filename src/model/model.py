@@ -48,15 +48,18 @@ class ToolTag(Enum):
 
 @dataclass
 class Tool:
-    name: str
     function: Callable
     tags: list[ToolTag]
+
+    @property
+    def name(self) -> str:
+        return self.function.__name__
 
 
 @dataclass
 class RawPromptRequest:
     system_prompt: str
-    user_prompt: list[str]
+    user_prompts: list[str]
     tools: list[Tool]
     message_history: list[dict[str, Any]] = field(default_factory=lambda: list())
 

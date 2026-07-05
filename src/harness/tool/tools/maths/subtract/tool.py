@@ -17,4 +17,4 @@ async def subtract(minuend: float, subtrahend: float) -> str:
 
 
 def new_tool() -> Tool:
-    return Tool("subtract", subtract, [ToolTag.MATHEMATICS, ToolTag.ARITHMETIC])
+    return Tool(subtract, [ToolTag.MATHEMATICS, ToolTag.ARITHMETIC])

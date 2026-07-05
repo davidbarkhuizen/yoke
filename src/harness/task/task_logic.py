@@ -5,8 +5,10 @@ import os
 import traceback
 from datetime import datetime
 from pathlib import Path
+from types import FunctionType
+from typing import Any
 
-from ollama import AsyncClient
+from ollama import AsyncClient, Message
 
 from common.file_utils import file_is_binary, read_text_file_async, write_text_file_async
 from config import YokeConfig
@@ -122,7 +124,27 @@ async def load_prompt_request_for_task_from_disk(
     if user_prompt is None:
         return None
 
-    return RawPromptRequest(system_prompt=system_prompt, user_prompt=[user_prompt], tools=[], message_history=[])
+    return RawPromptRequest(system_prompt=system_prompt, user_prompts=[user_prompt], tools=[], message_history=[])
+
+
+class FunctionEncoder(json.JSONEncoder):
+    def default(self, o):
+        if isinstance(o, FunctionType) or callable(o) or isinstance(o, Message.ToolCall):
+            return str(o)
+
+        return super().default(o)
+
+
+def msg_history_to_json(message_history: list[Any]) -> str:
+
+    # cleaned = []
+    # for msg in message_history:
+    #     msg["tool_calls"] = [dict(msg.__dict__) for msg in msg.get("tool_calls", [])]
+    #     cleaned.append(msg)
+
+    # print(cleaned)
+
+    return json.dumps(message_history, cls=FunctionEncoder, indent=4)
 
 
 async def write_prompt_response_elements_to_disk(console, rsp: RawPromptResponse, folder_path: Path) -> bool:
@@ -135,7 +157,7 @@ async def write_prompt_response_elements_to_disk(console, rsp: RawPromptResponse
             await write_text_file_async(folder_path / "output.md", rsp.content)
 
         if rsp.message_history:
-            message_history_json_str: str = json.dumps(rsp.message_history, indent=4)
+            message_history_json_str: str = msg_history_to_json(rsp.message_history)
             await write_text_file_async(folder_path / "message_history.json", message_history_json_str)
 
         if rsp.stats:

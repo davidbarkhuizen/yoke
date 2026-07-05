@@ -31,7 +31,7 @@ async def search_duckduckgo(query):
     return response_json
 
 
-async def search(query: str) -> str:
+async def search_internet(query: str) -> str:
     """
     search the internet using the supplied query
 
@@ -51,4 +51,4 @@ async def search(query: str) -> str:
 
 
 def new_tool() -> Tool:
-    return Tool("search", search, [ToolTag.SEARCH, ToolTag.INTERNET])
+    return Tool(search_internet, [ToolTag.SEARCH, ToolTag.INTERNET])

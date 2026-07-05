@@ -17,4 +17,4 @@ async def divide(dividend: float, divisor: float) -> str:
 
 
 def new_tool() -> Tool:
-    return Tool("divide", divide, [ToolTag.MATHEMATICS, ToolTag.ARITHMETIC])
+    return Tool(divide, [ToolTag.MATHEMATICS, ToolTag.ARITHMETIC])

@@ -18,4 +18,4 @@ async def get_day_of_week(iso8601_datum: str) -> str:
 
 
 def new_tool() -> Tool:
-    return Tool("get_day_of_week", get_day_of_week, [ToolTag.TEMPORAL])
+    return Tool(get_day_of_week, [ToolTag.TEMPORAL])

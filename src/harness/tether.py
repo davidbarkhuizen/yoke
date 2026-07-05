@@ -32,21 +32,23 @@ def new_message(
 async def prompt(console, client: AsyncClient, model: str, rq: RawPromptRequest) -> RawPromptResponse:
 
     system_prompt_length: int = len(rq.system_prompt)
-    user_prompt_length: int = sum([len(text) for text in rq.user_prompt])
+    user_prompt_length: int = sum([len(text) for text in rq.user_prompts])
     total_prompt_length: int = system_prompt_length + user_prompt_length
     print(f"context length (chars): {total_prompt_length} = system {system_prompt_length} + user {user_prompt_length}")
     if len(rq.tools) > 0:
         tools_str: str = ", ".join([tool.name for tool in rq.tools])
         print(f"tools: {tools_str}")
 
+    msg_history: list[dict[str, Any]] = [*rq.message_history]
+
     system_message = new_message(ChatRole.SYSTEM, rq.system_prompt, [])
-    user_messages = [new_message(ChatRole.USER, text, []) for text in rq.user_prompt]
-
-    rq_messages: list[dict[str, Any]] = [*rq.message_history]
     if len(rq.system_prompt) > 0:
-        rq_messages.append(system_message)
+        msg_history.append(system_message)
 
-    rq_messages.extend(user_messages)
+    user_messages = [new_message(ChatRole.USER, user_prompt, []) for user_prompt in rq.user_prompts]
+    msg_history.extend(user_messages)
+
+    # -------------------------------------------------
 
     rsp_content_text: str = ""
     rsp_thinking_text: str = ""
@@ -55,15 +57,17 @@ async def prompt(console, client: AsyncClient, model: str, rq: RawPromptRequest)
 
     chat_responses: list[ChatResponse] = list()
 
-    rsp_messages: list[dict[str, Any]] = [
-        new_message(role=ChatRole.ASSISTENT, content=rsp_content_text, tool_calls=rsp_tool_calls)
-    ]
-
     def new_raw_prompt_response(
         failure_error: str | None = None, failure_stacktrace: str | None = None
     ) -> RawPromptResponse:
 
-        msg_history: list[dict[str, Any]] = [*rq_messages, *rsp_messages]
+        msg_history.append(
+            new_message(
+                role=ChatRole.ASSISTENT,
+                content=rsp_content_text,
+                tool_calls=rsp_tool_calls,
+            )
+        )
 
         return RawPromptResponse(
             content=rsp_content_text,
@@ -78,7 +82,7 @@ async def prompt(console, client: AsyncClient, model: str, rq: RawPromptRequest)
 
     tools: list[Callable] = [tool.function for tool in rq.tools]
     try:
-        async for chat_response in await client.chat(model=model, messages=rq_messages, tools=tools, stream=True):
+        async for chat_response in await client.chat(model=model, messages=msg_history, tools=tools, stream=True):
             chat_responses.append(chat_response)
 
             responding_model: str | None = chat_response.model
@@ -186,7 +190,7 @@ async def prompt_and_handle_tool_calls(
             console,
             client,
             model,
-            RawPromptRequest(system_prompt="", user_prompt=[], tools=tools, message_history=message_history),
+            RawPromptRequest(system_prompt="", user_prompts=[], tools=tools, message_history=message_history),
         )
         tool_calls = [*rsp.tool_calls]
         message_history = rsp.message_history

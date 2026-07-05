@@ -26,12 +26,12 @@ class QueryCommand(AbstractHarnessCommand):
         available_tools: list[Tool] = [tool for tool in load_tools()]
         text = " ".join(args)
 
-        rq = RawPromptRequest(system_prompt="", user_prompt=[text], tools=available_tools)
+        rq = RawPromptRequest(system_prompt="", user_prompts=[text], tools=available_tools)
         rsp = await prompt_and_handle_tool_calls(self.console, self.client, model, rq, available_tools)
 
         now: datetime = datetime.now()
         query_outputs_folder: Path = (
-            Path(self.config.folders.user) / "query" / now.strftime("%Y%m%d") / now.strftime("%H%M%S")
+            Path(self.config.folders.user) / "query" / now.strftime("%Y%m%d") / now.strftime("%H%M_%S")
         )
 
         _ = await write_prompt_response_elements_to_disk(self.console, rsp, query_outputs_folder)

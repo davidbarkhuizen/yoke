@@ -1,4 +1,5 @@
 import asyncio
+import readline  # do not remove
 
 from config import YokeConfig, configure_from_json_file
 from harness.yoke import yoke
