@@ -7,6 +7,7 @@ from typing_extensions import Callable
 from config import YokeConfig
 from harness.command.abstract import AbstractHarnessCommand
 from harness.command.command_logic import execute_harness_command
+from harness.command.commands.dialog import DialogCommand
 from harness.command.commands.help import HelpCommand
 from harness.command.commands.list_models import ListModelsCommand
 from harness.command.commands.list_tasks import ListTasksCommand
@@ -72,6 +73,7 @@ async def harness_llm(client: AsyncClient, config: YokeConfig):
                     PSCommand,
                     ListTasksCommand,
                     ListToolsCommand,
+                    DialogCommand,
                 ]
             ]
         )
