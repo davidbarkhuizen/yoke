@@ -19,17 +19,22 @@ class DialogCommand(AbstractHarnessCommand):
         return "natural language dialogue"
 
     async def execute(self, model: str, args: list[str]) -> bool:
-        available_tools: list[Tool] = [tool for tool in load_tools()]
+        available_tools: list[Tool] = load_tools()
+        available_tools.clear()
 
         message_history: list[dict[str, Any]] = []
 
-        print("enter 'exit' to end dialogue")
+        print("enter '!exit' to end dialogue")
+        print("enter '!new' to start a new dialogue")
         while True:
             utterance: str = input("> ").strip()
             if len(utterance) == 0:
                 continue
-            if utterance.lower() == "exit":
+            if utterance.lower() == "!exit":
                 break
+            if utterance.lower() == "!new":
+                message_history.clear()
+                continue
 
             rq = RawPromptRequest(
                 system_prompt="", user_prompts=[utterance], tools=available_tools, message_history=message_history

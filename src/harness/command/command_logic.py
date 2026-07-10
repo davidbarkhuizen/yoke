@@ -14,10 +14,9 @@ async def execute_harness_command(console, model: str, command: AbstractHarnessC
         server: str = f"{command.config.ollama.host}:{command.config.ollama.port}"
         display_text_as_markdown(console, f"**error connecting to ollama server @ {server}**")
     except KeyboardInterrupt:
-        display_text_as_markdown(console, "**keyboard interrupt**")
+        pass
     except asyncio.exceptions.CancelledError:
-        display_text_as_markdown(console, "**async cancelled error**")
-        display_text_as_markdown(console, traceback.format_exc())
+        pass
     except Exception as e:
         stack_trace: str = "\n".join(traceback.format_exception(e))
         error_message: str = f"error: unhandled exception during harness command execution - {e} - {stack_trace}"

@@ -31,13 +31,9 @@ def new_message(
 
 async def prompt(console, client: AsyncClient, model: str, rq: RawPromptRequest) -> RawPromptResponse:
 
-    system_prompt_length: int = len(rq.system_prompt)
-    user_prompt_length: int = sum([len(text) for text in rq.user_prompts])
-    total_prompt_length: int = system_prompt_length + user_prompt_length
-    print(f"context length (chars): {total_prompt_length} = system {system_prompt_length} + user {user_prompt_length}")
-    if len(rq.tools) > 0:
-        tools_str: str = ", ".join([tool.name for tool in rq.tools])
-        print(f"tools: {tools_str}")
+    # system_prompt_length: int = len(rq.system_prompt)
+    # user_prompt_length: int = sum([len(text) for text in rq.user_prompts])
+    # total_prompt_length: int = system_prompt_length + user_prompt_length
 
     msg_history: list[dict[str, Any]] = [*rq.message_history]
 
