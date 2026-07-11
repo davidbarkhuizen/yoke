@@ -4,15 +4,16 @@ import httpx
 
 from model.model import Tool, ToolTag
 
+USER_AGENT: str = (
+    "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36"
+)
 
-async def http_get_json(
-    url,
-    USER_AGENT: str = "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
-) -> dict:
+
+async def http_get_json(url, user_agent: str = USER_AGENT) -> dict:
     async with httpx.AsyncClient() as client:
         response = await client.get(
             url,
-            headers={"user-agent": USER_AGENT},
+            headers={"user-agent": user_agent},
         )
         response.raise_for_status()
         return response.json()
