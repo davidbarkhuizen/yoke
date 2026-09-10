@@ -1,9 +1,8 @@
 import os
 import uuid
-from dataclasses import asdict, dataclass
 
 import httpx
-from dacite import from_dict
+from pydantic import BaseModel
 
 from model.model import Tool, ToolTag
 
@@ -15,14 +14,12 @@ def service_url() -> str:
     return os.environ.get(URL_ENV_VAR, DEFAULT_URL)
 
 
-@dataclass
-class QueryRequest:
+class QueryRequest(BaseModel):
     uuid: str
     query: str
 
 
-@dataclass
-class QueryResponse:
+class QueryResponse(BaseModel):
     uuid: str
     markdown: str
 
@@ -34,9 +31,9 @@ async def post_query(query: str) -> str:
 
     timeout = httpx.Timeout(connect=5, read=120, write=30, pool=5)
     async with httpx.AsyncClient(timeout=timeout) as client:
-        response = await client.post(service_url(), json=asdict(rq))
+        response = await client.post(service_url(), json=rq.model_dump())
         response.raise_for_status()
-        query_rsp = from_dict(data_class=QueryResponse, data=response.json())
+        query_rsp = QueryResponse.model_validate_json(response.text)
         return query_rsp.markdown
 
 
