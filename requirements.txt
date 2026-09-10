@@ -1,6 +1,6 @@
 aiofiles
 dacite
-ollama
-tabulate
-rich
 httpx
+ollama
+rich
+tabulate

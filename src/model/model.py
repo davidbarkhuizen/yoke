@@ -39,11 +39,14 @@ class BinaryFile(ContextFile):
 
 
 class ToolTag(Enum):
-    TEMPORAL = "TEMPORAL"
-    SEARCH = "SEARCH"
-    MATHEMATICS = "MATHEMATICS"
     ARITHMETIC = "ARITHMETIC"
+    EXTERNAL = "EXTERNAL"
     INTERNET = "INTERNET"
+    LLM = "LLM"
+    MATHEMATICS = "MATHEMATICS"
+    QUERY = "QUERY"
+    SEARCH = "SEARCH"
+    TEMPORAL = "TEMPORAL"
 
 
 @dataclass

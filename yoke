@@ -15,10 +15,20 @@ install () {
     source .venv/bin/activate
 
     python -m pip install --upgrade pip
-    python -m pip install -r requirements.txt
+    python -m pip install -r requirements.txt -r requirements.dev.txt
 
     deactivate
 }
+
+test (){
+
+    source .venv/bin/activate
+    cd src
+    python -m pytest -v
+    cd ..
+    deactivate
+}
+
 
 yoke () {
 
@@ -33,7 +43,7 @@ usage () {
     echo "-----------------------------------------------"
     echo "usage:"
     echo
-    echo ". cli [ clean | install | arp-scan | yoke ]"
+    echo ". cli [ arp-scan | sclean | install | test | yoke ]"
     echo
     echo
     echo ". cli arp-scan [interface]"
@@ -59,6 +69,10 @@ case "$option" in
 
     help)
         usage
+    ;;
+
+    test)
+        test
     ;;
 
     *)

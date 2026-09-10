@@ -12,6 +12,10 @@
 2. generation of code tests from natural language test cases 
 4. generation of code solution based on specification, that passes all tests
 
+## TASKS
+
+- correct typos in a string of text
+
 
 automations
 - run find-and-fix-bugs xxx for each source file in xxx respectively in isolation
