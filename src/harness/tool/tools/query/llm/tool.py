@@ -1,8 +1,9 @@
 import os
 import uuid
+from dataclasses import asdict, dataclass
 
 import httpx
-from pydantic import BaseModel
+from dacite import from_dict
 
 from model.model import Tool, ToolTag
 
@@ -14,12 +15,14 @@ def service_url() -> str:
     return os.environ.get(URL_ENV_VAR, DEFAULT_URL)
 
 
-class QueryRequest(BaseModel):
+@dataclass
+class QueryRequest:
     uuid: str
     query: str
 
 
-class QueryResponse(BaseModel):
+@dataclass
+class QueryResponse:
     uuid: str
     markdown: str
 
@@ -31,9 +34,9 @@ async def query_external_brave_llm(query: str) -> str:
 
     timeout = httpx.Timeout(connect=5, read=120, write=30, pool=5)
     async with httpx.AsyncClient(timeout=timeout) as client:
-        response = await client.post(service_url(), json=rq.model_dump())
+        response = await client.post(service_url(), json=asdict(rq))
         response.raise_for_status()
-        query_rsp = QueryResponse.model_validate_json(response.text)
+        query_rsp = from_dict(data_class=QueryResponse, data=response.json())
         return query_rsp.markdown
 
 
