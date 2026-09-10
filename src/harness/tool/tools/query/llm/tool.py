@@ -1,3 +1,4 @@
+import os
 import uuid
 
 import httpx
@@ -5,7 +6,12 @@ from pydantic import BaseModel
 
 from model.model import Tool, ToolTag
 
-URL: str = "http://localhost:8081"
+DEFAULT_URL: str = "http://localhost:8081"
+URL_ENV_VAR: str = "YOKE_QUERY_LLM_URL"
+
+
+def service_url() -> str:
+    return os.environ.get(URL_ENV_VAR, DEFAULT_URL)
 
 
 class QueryRequest(BaseModel):
@@ -24,7 +30,7 @@ async def query_external_brave_llm(query: str) -> str:
     rq: QueryRequest = QueryRequest(uuid=uuid_str, query=query)
 
     async with httpx.AsyncClient(timeout=httpx.Timeout(connect=1, read=100, write=1, pool=None)) as client:
-        response = await client.post(URL, json=rq.model_dump())
+        response = await client.post(service_url(), json=rq.model_dump())
         response.raise_for_status()
         query_rsp = QueryResponse.model_validate_json(response.text)
         return query_rsp.markdown
