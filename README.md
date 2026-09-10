@@ -1,129 +1,187 @@
-# Yoke System Specification
+# Yoke
 
-## Overview
-Yoke is an intelligent task automation framework that leverages large language models to execute complex workflows through structured prompts and file-based inputs/outputs. The system provides a command-line interface for interacting with various AI capabilities while maintaining clean separation between system prompts, user specifications, and generated outputs.
+Yoke is a command-line harness for driving a local [Ollama](https://ollama.com)
+language model through structured, file-based workflows. It keeps system prompts,
+user specifications, input files, and generated outputs cleanly separated on
+disk, and adds tool-calling, reusable task templates, and an interactive REPL on
+top of the raw model.
 
-## Core Architecture
+## Requirements
 
-### 1. Command Structure
-The system operates through a series of commands accessible via the command-line interface:
-- `list-models`: Display available language models
-- `list-tasks`: Show all available task templates
-- `task [task-name] [specification-name]`: Execute a specific task with user input
-- `! [natural language query]`: Direct LLM interaction without task context
+- Python 3.10+
+- A reachable Ollama server with at least one model pulled
+- `arp-scan` (optional, only for the `arp-scan` helper in the launcher script)
 
-### 2. Folder Structure
-The system maintains a hierarchical folder structure:
+Runtime dependencies are listed in `requirements.txt` (`ollama`, `httpx`,
+`pydantic`, `dacite`, `aiofiles`, `rich`, `tabulate`); development dependencies
+(`pytest`, `pytest-asyncio`) are in `requirements.dev.txt`.
+
+## Install
+
+The `yoke` launcher script wraps virtual-environment setup and execution:
+
+```
+. yoke install     # create .venv and install runtime + dev requirements
+```
+
+This creates `.venv/` in the repository root and installs everything into it.
+
+## Configure
+
+Configuration is read from `yoke.config.json` in the working directory. If the
+file is missing it is created with defaults on first run.
+
+```json
+{
+  "ollama": {
+    "host": "localhost",
+    "port": 11434,
+    "default_model": "qwen3.6:35b-a3b"
+  },
+  "folders": {
+    "system": "system",
+    "user": "user"
+  },
+  "log": { "root_folder": "log" }
+}
+```
+
+- `ollama.host` / `ollama.port` — where the Ollama server is listening
+- `ollama.default_model` — the model selected at startup (change it at runtime
+  with `use-model`)
+- `folders.system` — root of the task template tree
+- `folders.user` — root of user specifications and generated output
+
+## Run
+
+```
+. yoke             # start the interactive harness
+. yoke test        # run the pytest suite (from src/)
+```
+
+Starting the harness prints the command table and drops you at a prompt showing
+the active model:
+
+```
+qwen3.6:35b-a3b >
+```
+
+Enter `exit` or `quit` to leave.
+
+## Commands
+
+| Command | Usage | Description |
+| --- | --- | --- |
+| `help` | `help` | Print the command table |
+| `list-models` | `list-models` | List models available on the Ollama server |
+| `list-tasks` | `list-tasks` | List task templates found under `system/task/` |
+| `list-tools` | `list-tools` | List registered tools |
+| `ps` | `ps` | Show models currently loaded by Ollama (`/api/ps`) |
+| `use-model` | `use-model [model]` | Switch the active model for the session |
+| `?` | `? [natural language query]` | One-shot query to the model (tool-calling enabled) |
+| `dialog` | `dialog` | Multi-turn conversation with message history (tool-calling enabled) |
+| `!` | `! [task-name] [user-specification]` | Run a task template against a user specification |
+| `call-tool` | `call-tool [tool-name] [arguments-map]` | Invoke a registered tool directly |
+
+Within `dialog`, enter `!new` to clear the conversation history or `!exit` to
+return to the main prompt.
+
+## Tasks
+
+A task pairs a reusable **system prompt** with a **user specification**.
+
 ```
 system/
-├── task/
-│   └── [task-name]/
-│       ├── system.md          # System prompt for the task
-│       └── [subfolders]       # Additional task-specific resources
+└── task/
+    └── <task-name>/
+        └── system.md              # system prompt for the task
+
 user/
-├── [specification-name]/
-│   ├── specification.md       # User's problem description
-│   └── files/                 # Supporting input files
-generated/
-└── [specification-name]/      # Output directory for results
-    ├── output.md              # Main response from LLM
-    ├── thinking.md            # LLM's reasoning process (if available)
-    └── files/                 # Embedded files extracted from response
+└── task/
+    └── <specification-name>/
+        ├── specification.md       # the problem description
+        ├── files/                 # optional supporting input files
+        └── generated/
+            └── <YYYYMMDD_HHMMSS>/  # one folder per run
 ```
 
-## Task Execution Workflow
+Task names may be nested (any directory under `system/task/` containing a
+`system.md`). Running `! <task-name> <specification-name>`:
 
-### 1. Task Selection and Preparation
-When executing a task:
-1. System identifies the task template by name
-2. Reads the system prompt from `system/task/[task-name]/system.md`
-3. Locates user specification in `user/[specification-name]/`
-4. Gathers all files from `user/[specification-name]/files/`
+1. Loads `system/task/<task-name>/system.md` as the system prompt.
+2. Loads `user/task/<specification-name>/specification.md` and embeds every text
+   file found under `user/task/<specification-name>/files/` into the prompt.
+   Binary files are detected and skipped.
+3. Sends the request to the active model via
+   `prompt_and_handle_tool_calls()` in `src/harness/tether.py`.
+4. Writes the response into a timestamped run folder (see [Output](#output)).
 
-### 2. Prompt Construction
-The system constructs a structured prompt combining:
-- **System Prompt**: The task's base instructions
-- **User Files Block**: All input files embedded into the context
-- **User Specification**: The natural language problem description
+Task templates included in this repository:
+`check-health`, `distill-specification`, `find-and-fix-bugs`, `summarise-code`,
+`write-code`.
 
-### 3. LLM Interaction
-The constructed prompt is sent to the specified language model through the `communicate()` function in `harness/tether.py`.
+## Queries and dialog
 
-### 4. Response Processing
-The system processes the LLM response by:
-1. Extracting reasoning from `thinking.md` (if present)
-2. Parsing embedded text files from the markdown output
-3. Saving all outputs to the generated folder
+`?` and `dialog` write their output under `user/query/<YYYYMMDD>/<HHMM_SS>/`
+using the same artifact layout as tasks. `dialog` additionally carries a message
+history across turns.
 
-## Key Components
+## Output
 
-### 1. Communication Layer (`harness/tether.py`)
-- Handles asynchronous communication with language models
-- Manages conversation flow between system and LLM
-- Processes both thinking and content responses
+Each run folder may contain:
 
-### 2. File Handling Utilities (`common/file_utils.py`)
-- Asynchronous file reading/writing operations
-- Binary file detection
-- Text file encoding/decoding for markdown contexts
+| File | Contents |
+| --- | --- |
+| `output.md` | The model's response text |
+| `thinking.md` | The model's reasoning trace, when the model emits one |
+| `message_history.json` | The full message list for the exchange |
+| `stats.json` | Timing and token counts for the run |
+| `files/` | Text files extracted from fenced code blocks in `output.md` |
 
-### 3. Markdown Processing (`markdown/` folder)
-- **Parsing**: Extract embedded files from markdown responses
-- **Rendering**: Format text files as markdown code blocks
-- **Display**: Present structured data in readable formats
+## Tools
 
-### 4. Command Interface (`harness/commands/`)
-Each command implements the `AbstractHarnessCommand` interface:
-- **ListModelsCommand**: Displays available models with details
-- **ListTasksCommand**: Shows all registered tasks
-- **TaskCommand**: Executes tasks with user specifications
-- **InvokeCommand**: Direct natural language queries
+Tools are Python callables the model can invoke during `?` and `dialog` (and
+directly via `call-tool`). Each tool lives at
+`src/harness/tool/tools/<group>/<name>/tool.py` and exposes a `new_tool()`
+factory returning a `Tool(function, tags)`.
 
-## Features and Capabilities
+`load_tools(tags)` discovers every tool on disk; passing a list of `ToolTag`
+values filters to matching tools, while no argument (or an empty list) returns
+all of them.
 
-### 1. Task Templates
-Tasks are defined as reusable templates that provide:
-- System prompts that guide the LLM's behavior
-- Context for problem-solving
-- Expected output formats
+Tags: `ARITHMETIC`, `EXTERNAL`, `INTERNET`, `LLM`, `MATHEMATICS`, `QUERY`,
+`SEARCH`, `TEMPORAL`.
 
-### 2. File Context Management
-- Automatic embedding of user input files into prompts
-- Support for nested file structures
-- Binary file detection and handling
+Built-in tools:
 
-### 3. Response Extraction
-- Automatic parsing of embedded code blocks from markdown outputs
-- Extraction of generated files from LLM responses
-- Preservation of reasoning process in separate files
+| Tool | Tags | Notes |
+| --- | --- | --- |
+| `add`, `subtract`, `multiply`, `divide` | `MATHEMATICS`, `ARITHMETIC` | Basic arithmetic |
+| `get_current_date_time`, `get_day_of_week` | `TEMPORAL` | Current date/time helpers |
+| `search_internet` | `SEARCH`, `INTERNET` | DuckDuckGo Instant Answer API |
+| `query_llm` | `QUERY`, `LLM`, `EXTERNAL` | Proxies a query to an external LLM service; endpoint configurable via `YOKE_QUERY_LLM_URL` (default `http://localhost:8081`) |
 
-### 4. Modular Design
-- Clear separation between system components
-- Extensible command structure
-- Reusable utility functions
+## Project layout
 
-## Usage Examples
-
-### Execute a Task
 ```
-task code-generation my-web-app
-```
+src/
+├── entrypoint.py                  # starts the asyncio run loop
+├── config.py                      # YokeConfig, JSON load/save
+├── common/file_utils.py           # async file IO, binary detection
+├── markdown/                      # parse / render / display markdown
+├── model/model.py                 # dataclasses: Tool, RawPromptRequest, ...
+└── harness/
+    ├── yoke.py                    # command registry and REPL loop
+    ├── tether.py                  # Ollama chat + tool-call handling
+    ├── command/commands/          # one module per command
+    └── tool/
+        ├── tool_registry.py       # load_tools(), tag filtering
+        ├── tool_logic.py          # call_tool()
+        └── tools/                 # tool implementations
 
-### Direct Query
+system/task/<name>/system.md       # task templates
+user/task/<spec>/                  # user specifications and run output
+user/query/<date>/                 # ? and dialog output
+docs/                              # reference notes
+setup/                             # Ollama / model setup notes
 ```
-! explain quantum computing in simple terms
-```
-
-### List Available Resources
-```
-list-models
-list-tasks
-```
-
-## Output Structure
-Generated outputs are systematically organized:
-- `output.md`: Main response from the LLM
-- `thinking.md`: Reasoning process (if enabled)
-- `files/`: Extracted embedded files from the response
-
-This specification provides a comprehensive framework for understanding and extending the Yoke system's functionality while maintaining its modular, file-based approach to AI task execution.
