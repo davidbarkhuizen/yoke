@@ -25,6 +25,7 @@ async def query_external_brave_llm(query: str) -> str:
 
     async with httpx.AsyncClient(timeout=httpx.Timeout(connect=1, read=100, write=1, pool=None)) as client:
         response = await client.post(URL, json=rq.model_dump())
+        response.raise_for_status()
         query_rsp = QueryResponse.model_validate_json(response.text)
         return query_rsp.markdown
 
