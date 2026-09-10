@@ -43,7 +43,7 @@ usage () {
     echo "-----------------------------------------------"
     echo "usage:"
     echo
-    echo ". cli [ arp-scan | sclean | install | test | yoke ]"
+    echo ". cli [ arp-scan | clean | install | test | yoke ]"
     echo
     echo
     echo ". cli arp-scan [interface]"
