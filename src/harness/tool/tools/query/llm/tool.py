@@ -29,7 +29,8 @@ async def query_external_brave_llm(query: str) -> str:
     uuid_str: str = str(uuid.uuid4())
     rq: QueryRequest = QueryRequest(uuid=uuid_str, query=query)
 
-    async with httpx.AsyncClient(timeout=httpx.Timeout(connect=1, read=100, write=1, pool=None)) as client:
+    timeout = httpx.Timeout(connect=5, read=120, write=30, pool=5)
+    async with httpx.AsyncClient(timeout=timeout) as client:
         response = await client.post(service_url(), json=rq.model_dump())
         response.raise_for_status()
         query_rsp = QueryResponse.model_validate_json(response.text)
