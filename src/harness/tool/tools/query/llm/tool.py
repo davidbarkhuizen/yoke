@@ -27,7 +27,7 @@ class QueryResponse:
     markdown: str
 
 
-async def query_external_brave_llm(query: str) -> str:
+async def post_query(query: str) -> str:
 
     uuid_str: str = str(uuid.uuid4())
     rq: QueryRequest = QueryRequest(uuid=uuid_str, query=query)
@@ -51,8 +51,10 @@ async def query_llm(query: str) -> str:
         A string containing the query response, in markdown format
     """
 
-    query_rsp_markdown: str = await query_external_brave_llm(query)
-    return query_rsp_markdown
+    try:
+        return await post_query(query)
+    except httpx.HTTPError as e:
+        return f"error querying LLM service at {service_url()}: {e}"
 
 
 def new_tool() -> Tool:
