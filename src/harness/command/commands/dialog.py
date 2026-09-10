@@ -6,7 +6,7 @@ from harness.command.abstract import AbstractHarnessCommand
 from harness.task.task_logic import write_prompt_response_elements_to_disk
 from harness.tether import prompt_and_handle_tool_calls
 from harness.tool.tool_registry import load_tools
-from model.model import RawPromptRequest, Tool
+from model.model import RawPromptRequest, Tool, ToolTag
 
 
 class DialogCommand(AbstractHarnessCommand):
@@ -19,13 +19,13 @@ class DialogCommand(AbstractHarnessCommand):
         return "natural language dialogue"
 
     async def execute(self, model: str, args: list[str]) -> bool:
-        available_tools: list[Tool] = load_tools()
-        available_tools.clear()
+        tools: list[Tool] = load_tools([ToolTag.LLM, ToolTag.TEMPORAL])
 
         message_history: list[dict[str, Any]] = []
 
         print("enter '!exit' to end dialogue")
         print("enter '!new' to start a new dialogue")
+        print(f"tools: {', '.join([tool.name for tool in tools])}")
         while True:
             utterance: str = input("> ").strip()
             if len(utterance) == 0:
@@ -37,9 +37,9 @@ class DialogCommand(AbstractHarnessCommand):
                 continue
 
             rq = RawPromptRequest(
-                system_prompt="", user_prompts=[utterance], tools=available_tools, message_history=message_history
+                system_prompt="", user_prompts=[utterance], tools=tools, message_history=message_history
             )
-            rsp = await prompt_and_handle_tool_calls(self.console, self.client, model, rq, available_tools)
+            rsp = await prompt_and_handle_tool_calls(self.console, self.client, model, rq, tools)
 
             now: datetime = datetime.now()
             query_outputs_folder: Path = (
