@@ -1,6 +1,6 @@
 {
   "ollama": {
-    "host": "192.168.1.88",
+    "host": "localhost",
     "port": 11434,
     "default_model": "qwen3-coderx30b-a3b-16k:latest"
   },
